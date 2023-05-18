@@ -1,0 +1,9 @@
+{
+    "name":"joven-kioskordering",
+    "port":2040,
+    "web":{
+        "http":{
+            "port":"2040"
+        }
+    }
+}
