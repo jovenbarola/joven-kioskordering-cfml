@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" x-data="kiosk()" x-init="loadPage()" x-transition.scale="">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title x-text="application.name"></title>
+
+    <!-- Bootstrap 5.3.x -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-aFq/bzH65dt+w6FI2ooMVUpc+21e0SRygnTpmBvdBgSdnuTN7QbdgL+OapgHtvPp" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css" rel="stylesheet" >
+
+    <!-- Bootstrap 5.3.x -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha2/dist/js/bootstrap.bundle.min.js" integrity="sha384-qKXV1j0HvMUeCBQ+QVp7JcfGl760yU08IQ+GpUo5hlbpg51QRiuqHAJz8+BrxE/N" crossorigin="anonymous"></script>
+
+    <!-- Libraries -->
+    <script src="//unpkg.com/alpinejs" defer></script>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg bg-body-tertiary rounded" aria-label="Thirteenth navbar example">
+        <div class="container-fluid">
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarsExample11" aria-controls="navbarsExample11" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+
+          <div class="collapse navbar-collapse d-lg-flex" id="navbarsExample11">
+            <a class="navbar-brand col-lg-2 me-0"></a>
+            <!-- <a class="navbar-brand col-lg-3 me-0" href="javascript:void(0)" x-text="application.name"></a> -->
+            <ul class="navbar-nav col-lg-6 justify-content-lg-center">
+              <li class="nav-item m-2">
+                <a class="btn btn-primary align-middle h-100 w-100" href="#" @click.prevent="listItems({})">ALL</a>
+              </li>
+              <template x-for="category in categories">
+                <li class="nav-item m-2">
+                  <a class="btn btn-primary align-middle h-100 w-100" href="#" x-text="category.cat_name" @click.prevent="listItems({cat_code: category.cat_code})"></a>
+                </li>
+              </template>
+            </ul>
+            <div class="d-lg-flex col-lg-3 justify-content-lg-end">
+              <button class="btn btn-danger">Logout</button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+    <!-- Main content -->
+    <div class="container-fluid">
+      <div class="d-flex justify-content-center">
+        <div class="spinner-border" role="status" x-show.important="isLoading" x-transition.opacity>
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+      <div class="row">
+            <template x-for="menu in menus">
+                <div class="card col-2 m-2" @click.prevent="showItem(menu)" x-transition.delay.50ms>
+                    <div class="card-header">
+                      <img src="assets/images/no-photo.png" alt="" class="img img-thumbnail">
+                    </div>
+                    <div class="card-body text-center">
+                        <h3 x-text:="menu.menu_name"></h3>
+                    </div>
+                </div>
+            </template>
+            <div class="container">
+              <div class="alert alert-warning text-center" x-show="menus.length == 0">
+                <h3>Search No Results</h3>
+                <p>We're sorry. We cannot find any matches for your search term.</p>
+                <i class="bi bi-search" style="font-size: 48px"></i>
+              </div>
+            </div>
+      </div>
+    </div>
+    <!-- /Main content -->
+
+    <!-- Custom styles -->
+    <style>
+      .card {
+        cursor: pointer;
+      }
+    </style>
+
+    <!-- Custom script -->
+    <script>
+        function kiosk() {
+          return {
+              application:{},
+              isLoading: false,
+              menus: [],
+              categories: [],
+              menu_code: null,
+              cat_code: null,
+              url: '',
+              params: {},
+              getUrlParam: function(k) {
+                var hash = window.location.hash.substr(1);
+                var result = hash.split('&').reduce(function (res, item) {
+                  var parts = item.split('=');
+                  res[parts[0]] = parts[1];
+                  return res;
+                }, {});
+                return result[k];
+              },
+              getUrlParams: function() {
+                var hash = window.location.hash.substr(1);
+                var result = hash.split('&').reduce(function (res, item) {
+                  var parts = item.split('=');
+                  res[parts[0]] = parts[1];
+                  return res;
+                }, {});
+                return result;
+              },
+              loadPage: function() {
+                this.isLoading = true;
+                fetch('config/app.json')
+                  .then(res => res.json())
+                  .then(data => {
+                    this.application = data;
+                });
+
+                fetch('v1/api.cfm?action=MENUS')
+                  .then(res => res.json())
+                  .then(data => {
+                    this.menus = data;
+                });
+
+                fetch('v1/api.cfm?action=CATEGORIES')
+                  .then(res => res.json())
+                  .then(data => {
+                    this.isLoading = false;
+                    this.categories = data;
+                });
+
+              },
+              listItems: function(params) {
+                this.isLoading = true;
+
+                let url = 'v1/api.cfm?action=MENUS'
+                if(typeof params.cat_code !== "undefined") {
+                  url += '&cat_code='+ params.cat_code
+                }
+                else if(typeof params.menu_code !== "undefined") {
+                  url += '&menu_code='+ params.menu_code
+                }
+                fetch(url)
+                  .then(res => res.json())
+                  .then(data => {
+                    this.isLoading = false;
+                    this.menus = data;
+                });
+              },
+              showItem: function(params) {
+                alert(JSON.stringify(params));
+              },
+          };
+        }
+    </script>
+</body>
+</html>
